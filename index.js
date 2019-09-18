@@ -1,10 +1,8 @@
-//medimpact
 var request = require("/opt/node_modules/request");
 var rp = require('/opt/node_modules/request-promise');
 const {Pool, Client} = require('/opt/node_modules/pg');
 var db_host = process.env.DB_HOST;
 var reg = process.env.REGION;
-
 // const connectionString = 'postgresql://postgres:secret@10.80.1.121:5432/apid'
 const connectionString = db_host;
 function DateFunction(){
@@ -38,7 +36,7 @@ let url = ""
 let data = []
 var len=0;
 exports.myhandler = async function abc(){
-    var res1 = await client.query ("SELECT drug_id FROM shuffle_drugs where flag = 'pending' and region = '"+reg+"'");
+    var res1 = await client.query("SELECT drug_id FROM shuffle_drugs where flag = 'pending' and region = '"+reg+"'");
     for(var i=0; i< res1.rows.length ; i++){
         for(var j=0; j < res1.rows[i].drug_id.length; j++){
             //console.log("print ((((((((((((((((((("+res1.rows[i].drug_id[j]);
@@ -67,8 +65,20 @@ exports.myhandler = async function abc(){
             .then(async function (response) {
                 //console.log(url)
                 let jsondata = JSON.parse(response);
-                pricingData1.price = jsondata.drugs.locatedDrug[0].pricing.price;
-                pricingData1.pharmacy = jsondata.drugs.locatedDrug[0].pharmacy.name;
+                var lowestPrice =  parseFloat(jsondata.drugs.locatedDrug[0].pricing.price) ;
+                var lowestPharmacy=jsondata.drugs.locatedDrug[0].pharmacy.name;
+                jsondata.drugs.locatedDrug.forEach(function(value){
+                    if(value!= null){
+                        if(lowestPrice > parseFloat(value.pricing.price)){
+                            lowestPrice =  parseFloat(value.pricing.price);
+                            lowestPharmacy=value.pharmacy.name;
+                        }
+                     
+                    }
+                });
+                pricingData1.price = lowestPrice;
+                pricingData1.pharmacy = lowestPharmacy;
+               
                 //console.log("price="+pricingData1.price);
                 const query2 = 'INSERT INTO public_price(average_price, createdat, difference, drug_details_id, lowest_market_price, pharmacy, price, program_id, recommended_price) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *';
                 const values = [pricingData1.average_price, pricingData1.createdat, pricingData1.difference, drugUrlList.rows[0].drug_id, pricingData1.lowest_market_price,pricingData1.pharmacy,pricingData1.price,pricingData1.program_id,pricingData1.recommended_price];
