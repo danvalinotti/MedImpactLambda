@@ -88,6 +88,7 @@ exports.myhandler = async function abc(){
                     .catch(e => {console.log("errr")})
             })
             .catch(function (err) {
+                console.log(url)
                 console.log(err)
             });
         }else{continue}
